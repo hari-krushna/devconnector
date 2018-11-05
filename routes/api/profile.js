@@ -23,7 +23,7 @@ router.get(
   (req, res) => {
     const errors = {};
     Profile.findOne({ user: req.user.id })
-    .populate('user', ['name', 'avatar'])
+      .populate("user", ["name", "avatar"])
       .then(profile => {
         if (!profile) {
           errors.noprofile = "No profile exists for this user";
@@ -34,6 +34,24 @@ router.get(
       .catch(error => res.json(error));
   }
 );
+
+// @route GET api/profile/handle/:handle
+// @desc get profile by handle
+// access public
+router.get("/handle/:handle", (req, res) => {
+  const errors = {};
+  Profile.findOne({ handle: req.params.handle })
+  .populate("user", [ "name", "avatar"])
+  .then(profile => {
+      if(!profile) {
+          errors.noprofile = "No profile exists for the handle";
+          res.status(404).json(errors)
+      }
+
+      res.json(profile)
+  })
+  .catch(error => res.json(error))
+});
 
 // @route POST api/profile
 // @desc create or update user profile
