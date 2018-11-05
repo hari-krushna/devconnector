@@ -28,7 +28,7 @@ const hashPassword = password => {
 // @route   GET api/users/test
 // @desc    Test users route
 // @access  public
-router.get("/test", (req, res) => res.json({ msg: "Users work" }));
+router.get("/test", (req, res) => res.json({ msg: "Users route works" }));
 
 // @route   POST api/users/register
 // @desc    Register a new user
