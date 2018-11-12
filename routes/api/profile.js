@@ -203,12 +203,37 @@ router.post(
       description: req.body.description
     };
 
-    Profile.findOne({ user: req.user.id })
-    .then(profile  => {
+    Profile.findOne({ user: req.user.id }).then(profile => {
       // Add to education array
       profile.education.unshift(newEdu);
-      profile.save().then(profile => res.json(profile))
-    })
+      profile.save().then(profile => res.json(profile));
+    });
+  }
+);
+
+// @route DELETE api/profile/experience/exp_id
+// @desc delete experience from profile
+// @access private
+router.delete(
+  "/experience/:exp_id",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    Profile.findOne({ user: req.user.id })
+      .then(profile => {
+        // Get remove index
+        const removeIndex = profile.experience
+          .map(item => item.id)
+          .indexOf(req.params.exp_id);
+
+        if (removeIndex === -1) {
+          return res.status(404).json({ error: "There is no experience with this ID" });
+        } else {
+          // Splice out of array
+          profile.experience.splice(removeIndex, 1);
+          profile.save().then(profile => res.json(profile));
+        }
+      })
+      .catch(err => res.status(404).json(err));
   }
 );
 
