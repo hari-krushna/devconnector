@@ -252,15 +252,30 @@ router.delete(
         .map(item => item.id)
         .indexOf(req.params.edu_id);
 
-        if (removeIndex === -1) {
-          return res
-            .status(404)
-            .json({ error: "There is no education with this ID" });
-        } else {
-            // Splice out of array
-            profile.education.splice(removeIndex, 1);
-            profile.save().then(profile => res.json(profile));
-        }
+      if (removeIndex === -1) {
+        return res
+          .status(404)
+          .json({ error: "There is no education with this ID" });
+      } else {
+        // Splice out of array
+        profile.education.splice(removeIndex, 1);
+        profile.save().then(profile => res.json(profile));
+      }
+    });
+  }
+);
+
+// @route DELETE api/profile
+// @desc delete user and profile
+// @access private
+router.delete(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    Profile.findOneAndRemove({ user: req.user.id }).then(() => {
+      User.findOneAndRemove({ _id: req.user.id }).then(() => {
+        res.json({ success: true });
+      });
     });
   }
 );
