@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const passport = require("passport");
 
 const validateProfileInput = require("../../validators/profile");
+const validateExperienceInput = require("../../validators/experience");
 
 // Load Profile && User models
 const Profile = require("../../models/Profile");
@@ -41,16 +42,16 @@ router.get(
 router.get("/all", (req, res) => {
   const errors = {};
   Profile.find()
-  .populate('user', ["name", "avatar"])
-  .then(profiles => {
-    if (!profiles) {
-      errors.noprofile = "There are no profiles";
-      res.status(404).json(errors);
-    }
-    res.json(profiles)
-  })
-  .catch(error => res.status(404).json({ profile: "There are no profiles"}))
-})
+    .populate("user", ["name", "avatar"])
+    .then(profiles => {
+      if (!profiles) {
+        errors.noprofile = "There are no profiles";
+        res.status(404).json(errors);
+      }
+      res.json(profiles);
+    })
+    .catch(error => res.status(404).json({ profile: "There are no profiles" }));
+});
 
 // @route GET api/profile/handle/:handle
 // @desc get profile by handle
@@ -67,7 +68,7 @@ router.get("/handle/:handle", (req, res) => {
 
       res.json(profile);
     })
-    .catch(error => res.json({ profile: "There is no profile for this user"}));
+    .catch(error => res.json({ profile: "There is no profile for this user" }));
 });
 
 // @route GET api/profile/user/:user_id
@@ -76,15 +77,15 @@ router.get("/handle/:handle", (req, res) => {
 router.get("/user/:user_id", (req, res) => {
   const errors = {};
   Profile.findOne({ user: req.params.user_id })
-  .populate('user', ["name", "avatar"])
-  .then(profile => {
-    if (!profile) {
-      errors.noprofile = "There is no profile for this user"
-      res.status(404).json(errors)
-    }
-    res.json(profile)
-  })
-  .catch(error => res.json({ profile: "There is no profile for this user"}));
+    .populate("user", ["name", "avatar"])
+    .then(profile => {
+      if (!profile) {
+        errors.noprofile = "There is no profile for this user";
+        res.status(404).json(errors);
+      }
+      res.json(profile);
+    })
+    .catch(error => res.json({ profile: "There is no profile for this user" }));
 });
 
 // @route POST api/profile
@@ -144,6 +145,39 @@ router.post(
         });
       }
     });
+  }
+);
+
+// @route POST api/profile/experience
+// @desc add experience to profile
+// @access private
+router.post(
+  "/experience",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    const { errors, isValid } = validateExperienceInput(req.body);
+
+    // Validate fields
+    if (!isValid) {
+      return res.status(400).json(errors);
+    }
+
+    const newExp = {
+      title: req.body.title,
+      company: req.body.company,
+      location: req.body.location,
+      from: req.body.from,
+      to: req.body.to,
+      current: req.body.current,
+      description: req.body.description
+    };
+
+    Profile.findOne({ user: req.user.id })
+    .then(profile => {
+      // Add to experience array
+      profile.experience.unshift(newExp);
+      profile.save().then(profile => res.json(profile));
+    })
   }
 );
 
