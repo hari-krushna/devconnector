@@ -146,25 +146,44 @@ router.post(
               .map(item => item.id)
               .indexOf(req.user.id);
 
-            // if (removeIndex === -1) {
-            //   return res
-            //     .status(404)
-            //     .json({ error: "There is no post with this ID" });
-            // } else {
-
-
-              // Splice out of array
-              post.likes.splice(removeIndex, 1);
-              post.save().then(post => res.json(post));
-
-              
-            // }
+            // Splice out of array and save
+            post.likes.splice(removeIndex, 1);
+            post.save().then(post => res.json(post));
           })
           .catch(err =>
             res.status(404).json({ postnotfound: "No post found" })
           );
       })
       .catch(err => res.status(404).json({ postnotfound: "No post found" }));
+  }
+);
+
+// @route POST api/posts/comment/:postid
+// @desc comment a post
+// @access private
+router.post(
+  "/comment/:postid",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    const { errors, isValid } = validatePostInput(req.body);
+
+    // Check Validation
+    if (!isValid) {
+      // If any errors, send 400 with errors object
+      return res.status(400).json(errors);
+    }
+
+    const newComment = {
+      text: req.body.text,
+      name: req.body.name,
+      avatar: req.body.avatar,
+      user: req.user.id
+    };
+
+    Post.findById(req.params.postid).then(post => {
+      post.comments.unshift(newComment);
+      post.save().then(post => res.json(post));
+    });
   }
 );
 
