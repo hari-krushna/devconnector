@@ -76,16 +76,46 @@ router.delete(
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     Profile.findOne({ user: req.user.id })
-    .then(
-      Post.findById(req.params.id).then(post => {
+      .then(
+        Post.findById(req.params.id).then(post => {
           //check the post owner
           if (post.user.toString() !== req.user.id) {
-              res.status(401).json({ notauthorized: "Not authorized to delete"})
+            res.status(401).json({ notauthorized: "Not authorized to delete" });
           }
-          post.remove().then(() => res.json({ success: true }))
+          post.remove().then(() => res.json({ success: true }));
+        })
+      )
+      .catch(error => res.status(404).json({ postnotfound: "No post found" }));
+  }
+);
+
+// @route POST api/posts/like/:postid
+// @desc like post
+// @access private
+router.post(
+  "/like/:postid",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    Profile.findOne({ user: req.user.id })
+      .then(profile => {
+        Post.findById(req.params.postid)
+        .then(post => {
+          if (
+            post.likes.filter(like => like.user.toString() === req.user.id)
+              .length > 0
+          ) {
+            return res
+              .status(400)
+              .json({ alreadyliked: "User already liked this post" });
+          }
+
+          // Add user id to user array
+          post.likes.unshift({ user: req.user.id })
+          post.save().then(post => res.json(post))
+        })
+        .catch(err => res.status(404).json({ postnotfound: 'No post found' }))
       })
-    )
-    .catch(error => res.status(404).json({postnotfound: "No post found"}))
+      .catch(err => res.status(404).json({ postnotfound: "No post found" }));
   }
 );
 
