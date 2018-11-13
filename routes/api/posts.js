@@ -99,21 +99,70 @@ router.post(
     Profile.findOne({ user: req.user.id })
       .then(profile => {
         Post.findById(req.params.postid)
-        .then(post => {
-          if (
-            post.likes.filter(like => like.user.toString() === req.user.id)
-              .length > 0
-          ) {
-            return res
-              .status(400)
-              .json({ alreadyliked: "User already liked this post" });
-          }
+          .then(post => {
+            if (
+              post.likes.filter(like => like.user.toString() === req.user.id)
+                .length > 0
+            ) {
+              return res
+                .status(400)
+                .json({ alreadyliked: "User already liked this post" });
+            }
 
-          // Add user id to user array
-          post.likes.unshift({ user: req.user.id })
-          post.save().then(post => res.json(post))
-        })
-        .catch(err => res.status(404).json({ postnotfound: 'No post found' }))
+            // Add user id to user array
+            post.likes.unshift({ user: req.user.id });
+            post.save().then(post => res.json(post));
+          })
+          .catch(err =>
+            res.status(404).json({ postnotfound: "No post found" })
+          );
+      })
+      .catch(err => res.status(404).json({ postnotfound: "No post found" }));
+  }
+);
+
+// @route POST api/posts/unlike/:postid
+// @desc unlike post
+// @access private
+router.post(
+  "/unlike/:postid",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    Profile.findOne({ user: req.user.id })
+      .then(profile => {
+        Post.findById(req.params.postid)
+          .then(post => {
+            if (
+              post.likes.filter(like => like.user.toString() === req.user.id)
+                .length === 0
+            ) {
+              return res
+                .status(400)
+                .json({ notliked: "You have not liked this post" });
+            }
+
+            // Get index of the element to be removed
+            const removeIndex = post.likes
+              .map(item => item.id)
+              .indexOf(req.user.id);
+
+            // if (removeIndex === -1) {
+            //   return res
+            //     .status(404)
+            //     .json({ error: "There is no post with this ID" });
+            // } else {
+
+
+              // Splice out of array
+              post.likes.splice(removeIndex, 1);
+              post.save().then(post => res.json(post));
+
+              
+            // }
+          })
+          .catch(err =>
+            res.status(404).json({ postnotfound: "No post found" })
+          );
       })
       .catch(err => res.status(404).json({ postnotfound: "No post found" }));
   }
