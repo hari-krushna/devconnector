@@ -159,7 +159,7 @@ router.post(
 );
 
 // @route POST api/posts/comment/:postid
-// @desc comment a post
+// @desc add comment to post
 // @access private
 router.post(
   "/comment/:postid",
@@ -184,6 +184,41 @@ router.post(
       post.comments.unshift(newComment);
       post.save().then(post => res.json(post));
     });
+  }
+);
+
+// @route   DELETE api/posts/comment/:post_id/:comment_id
+// @desc    Remove comment from post
+// @access  Private
+router.delete(
+  "/comment/:post_id/:comment_id",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    Post.findById(req.params.post_id)
+      .then(post => {
+        //check if comment exists
+        if (
+          post.comments.filter(
+            comment => comment._id.toString() === req.params.comment_id
+          ).length === 0
+        ) {
+          return res
+            .status(404)
+            .json({ commentnotexists: "Comment does not exist" });
+        }
+
+        // Get remove Index
+        const removeIndex = post.comments
+        .map(comment =>comment._id.toString())
+        .indexOf(req.params.comment_id);
+
+
+        // Splice the array
+        post.comments.splice(removeIndex, 1);
+        // Save to db
+        post.save().then(post => res.json(post))
+      })
+      .catch(error => res.status(404).json({ nopostfound: "No post found" }));
   }
 );
 
